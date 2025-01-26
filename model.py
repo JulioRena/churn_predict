@@ -43,7 +43,13 @@ preprocessor = ColumnTransformer(
 
 pipeline = Pipeline([
     ('preprocessor', preprocessor),
-    ('model', RandomForestClassifier(class_weight='balanced', random_state=42))
+    ('model', RandomForestClassifier(class_weight='balanced',
+                                     random_state=42,
+                                     n_estimators=100,
+                                     min_samples_split=5,
+                                     min_samples_leaf=2,
+                                     max_depth=20,
+                                     bootstrap=True))
 ])
 
 pipeline.fit(X_train, y_train)
