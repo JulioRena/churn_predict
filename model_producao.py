@@ -12,8 +12,10 @@ remover_variavel(new_df, 'CustomerId')
 remover_variavel(new_df, 'Surname')
 remover_variavel(new_df, 'Gender')
 
-y_pred_new = pipeline.predict(new_df)
+
 y_probas_new = pipeline.predict_proba(new_df)
+threshold = 0.23
+y_pred_new = (y_probas_new[:, 1] >= threshold).astype(int)
 
 
 df_resultado['churn_predito'] = y_pred_new
