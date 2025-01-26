@@ -5,12 +5,15 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report
+from sklearn.pipeline import Pipeline
+
+import joblib
 
 
-df = pd.read_csv("Abandono_clientes.csv", sep=',')
 
-#remover as variáveis insignificantes para o modelo (já analisado no EDA)
+
+df = pd.read_csv("datasets/Abandono_clientes.csv", sep=',')
+
 remover_variavel(df, 'RowNumber')
 remover_variavel(df, 'CustomerId')
 remover_variavel(df, 'Surname')
@@ -21,35 +24,32 @@ continuous_vars = ['CreditScore', 'Age', 'Tenure', 'Balance', 'NumOfProducts', '
 
 categorical_vars = [ 'Geography']
 
+binary_vars = ['HasCrCard', 'IsActiveMember']
 
 
-
-encoder = ColumnTransformer(
-    transformers=[
-        ('cat', OneHotEncoder(drop='first'), categorical_vars)  # Drop para evitar dummy trap
-    ],
-    remainder='passthrough'
-)
-
-X_categorical_encoded = encoder.fit_transform(df[categorical_vars + ['HasCrCard', 'IsActiveMember']])
-
-
-scaler = StandardScaler()
-X_continuous_scaled = scaler.fit_transform(df[continuous_vars])
-
-X_combined = np.hstack((X_continuous_scaled, X_categorical_encoded))
-
-
+X = df.drop('Exited',axis=1)
 y = df['Exited']
 
-X_train, X_test, y_train, y_test = train_test_split(X_combined, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 
-clf = RandomForestClassifier(random_state=42)
-clf.fit(X_train, y_train)
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('target_encoder', OneHotEncoder(), categorical_vars),
+        ('scaler', StandardScaler(), continuous_vars),
+        ('binary', 'passthrough', binary_vars)  
+    ])
+
+pipeline = Pipeline([
+    ('preprocessor', preprocessor),
+    ('model', RandomForestClassifier(class_weight='balanced', random_state=42))
+])
+
+pipeline.fit(X_train, y_train)
 
 
-y_pred = clf.predict(X_test)
-print(classification_report(y_test, y_pred))
+joblib.dump(pipeline, 'modelo_treinado.pkl')
+
 
 
